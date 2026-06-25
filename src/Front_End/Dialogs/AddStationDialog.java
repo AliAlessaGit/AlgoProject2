@@ -1,4 +1,8 @@
-package Front_End;
+package Front_End.Dialogs;
+
+import Front_End.Theme;
+import Front_End.Components.ModernButton;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -19,13 +23,20 @@ public class AddStationDialog extends JDialog {
 
     private void buildUI() {
 
-        setSize(350,180);
+        setSize(400,220);
 
-        setLayout(new BorderLayout());
+        setLayout(
+                new BorderLayout(
+                        10,
+                        10));
 
         JPanel center =
                 new JPanel(
-                        new GridLayout(2,1,5,5));
+                        new GridLayout(
+                                2,
+                                1,
+                                10,
+                                10));
 
         center.add(
                 new JLabel(
@@ -39,10 +50,10 @@ public class AddStationDialog extends JDialog {
         add(center,
                 BorderLayout.CENTER);
 
-        JButton add =
-                new JButton("Add");
+        ModernButton addButton =
+                new ModernButton("Add");
 
-        add.addActionListener(
+        addButton.addActionListener(
                 e -> {
 
                     confirmed = true;
@@ -50,7 +61,7 @@ public class AddStationDialog extends JDialog {
                     dispose();
                 });
 
-        add(add,
+        add(addButton,
                 BorderLayout.SOUTH);
 
         setLocationRelativeTo(

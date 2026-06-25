@@ -2,6 +2,7 @@ package Front_End;
 
 import Back_End.Network;
 import Front_End.Pages.DashboardPanel;
+import Front_End.Pages.StationsPanel;
 
 import javax.swing.*;
 import java.awt.*;
