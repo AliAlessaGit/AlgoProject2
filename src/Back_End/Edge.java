@@ -1,4 +1,6 @@
-class Edge {
+package Back_End;
+
+public class Edge {
     Station destination;
     int weight;
 
@@ -7,7 +9,7 @@ class Edge {
         this.weight = weight;
     }
 
-    Edge(String destination, int weight) {
+    public Edge(String destination, int weight) {
         this.destination = new Station(destination);
         this.weight = weight;
     }

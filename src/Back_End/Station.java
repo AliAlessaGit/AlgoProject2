@@ -1,9 +1,11 @@
+package Back_End;
+
 import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Map.entry;
 
-class Station {
+public class Station {
     static Map<String, String> symbols = Map.ofEntries(
             entry("Damascus", "DM"),
             entry("Aleppo", "AL"),
@@ -20,10 +22,10 @@ class Station {
             entry("Ar-Raqqah", "RA"),
             entry("Rif Dimashq", "RD"));
 
-    String name;
-    String symbol;
+    public String name;
+    public String symbol;
 
-    Station(String name) {
+    public Station(String name) {
         this.name = name;
         this.symbol = symbols.get(name);
     }

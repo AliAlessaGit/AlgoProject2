@@ -1,3 +1,5 @@
+package Back_End;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -370,5 +372,26 @@ public class Network {
 
         return result;
     }
+    public ArrayList<Station> getStations() {
 
+        return new ArrayList<>(
+                network.keySet()
+        );
+    }
+    public void removeStation(String stationName) {
+
+        Station station =
+                new Station(stationName);
+
+        network.remove(station);
+
+        for (Station st : network.keySet()) {
+
+            network.get(st).removeIf(
+                    edge ->
+                            edge.destination.name
+                                    .equals(stationName)
+            );
+        }
+    }
 }
