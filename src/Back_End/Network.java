@@ -1,5 +1,8 @@
 package Back_End;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +22,8 @@ public class Network {
         this.network = network;
     }
 
+    private final List<NetworkListener> listeners = new ArrayList<>();
+
     public Network() {
         network = new HashMap<>();
     }
@@ -26,6 +31,8 @@ public class Network {
     public void put(String key, ArrayList<Edge> value) {
         network.put(new Station(key), value);
     }
+
+
 
     public List<Edge> get(String k) {
         Station key = new Station(k);
@@ -35,6 +42,7 @@ public class Network {
     // إضافة محطة
     public void addStation(Station station) {
         network.putIfAbsent(station, new ArrayList<>());
+        notifyListeners();
     }
 
     // إضافة مسار
@@ -44,7 +52,10 @@ public class Network {
         addStation(src);
         addStation(dest);
 
+        notifyListeners();
+
         network.get(src).add(new Edge(dest, distance));
+
 
     }
 
@@ -91,6 +102,8 @@ public class Network {
             String source = parts[0].trim();
 
             addStation(new Station(source));
+
+            notifyListeners();
 
             if (parts.length < 2)
                 continue;
@@ -303,6 +316,11 @@ public class Network {
     }
 
     public boolean containsCycle() {
+
+        if (getStations().isEmpty()) {
+            return false;
+        }
+
         Map<String, Integer> deg = new HashMap<>();
         PriorityQueue<Degree> degreesQueue = new PriorityQueue<>(Comparator.comparingInt(n -> n.deg));
 
@@ -324,7 +342,12 @@ public class Network {
         String currentStation;
         int newDeg;
         while (true) {
+
             stWithMinDegree = degreesQueue.poll();
+
+            if (stWithMinDegree == null) {
+                return false;
+            }
             currentStation = stWithMinDegree.stationName;
             if (stWithMinDegree.deg != 0) {
                 break;
@@ -332,9 +355,29 @@ public class Network {
 
             deg.put(currentStation, -1);
 
-            for (Edge edge : network.get(new Station(currentStation))) {
-                newDeg = deg.get(edge.destination.name) - 1;
+            Station current = findStation(currentStation);
+
+            if (current == null) {
+                continue;
+            }
+
+            ArrayList<Edge> edges = network.get(current);
+
+            if (edges == null) {
+                continue;
+            }
+
+            for (Edge edge : edges) {
+
+                Integer degree = deg.get(edge.destination.name);
+
+                if (degree == null || degree == -1)
+                    continue;
+
+                newDeg = degree - 1;
+
                 deg.put(edge.destination.name, newDeg);
+
                 degreesQueue.add(new Degree(edge.destination.name, newDeg));
             }
         }
@@ -393,5 +436,163 @@ public class Network {
                                     .equals(stationName)
             );
         }
+        notifyListeners();
+    }
+    // حذف مسار
+    public boolean removeRoute(String source, String destination) {
+
+        Station src = new Station(source);
+
+        ArrayList<Edge> edges = network.get(src);
+
+        if (edges == null)
+            return false;
+        notifyListeners();
+
+        return edges.removeIf(edge ->
+                edge.destination.name.equals(destination));
+
+
+    }
+
+    // التحقق من وجود مسار
+    public boolean routeExists(String source, String destination) {
+
+        Station src = new Station(source);
+
+        ArrayList<Edge> edges = network.get(src);
+
+        if (edges == null)
+            return false;
+
+        for (Edge edge : edges) {
+
+            if (edge.destination.name.equals(destination))
+                return true;
+        }
+
+        return false;
+    }
+
+    // جلب مسار
+    public Edge getRoute(String source, String destination) {
+
+        Station src = new Station(source);
+
+        ArrayList<Edge> edges = network.get(src);
+
+        if (edges == null)
+            return null;
+
+        for (Edge edge : edges) {
+
+            if (edge.destination.name.equals(destination))
+                return edge;
+        }
+
+        return null;
+    }
+
+    // تعديل وزن مسار
+    public boolean updateRoute(String source,
+                               String destination,
+                               int newDistance) {
+
+        Edge edge = getRoute(source, destination);
+
+        if (edge == null)
+            return false;
+
+        edge.weight = newDistance;
+        notifyListeners();
+
+        return true;
+    }// تعديل اسم محطة
+    public boolean renameStation(String oldName,
+                                 String newName) {
+
+        if (oldName.equals(newName))
+            return true;
+
+        Station oldStation = new Station(oldName);
+
+        ArrayList<Edge> edges = network.remove(oldStation);
+
+        if (edges == null)
+            return false;
+
+        Station newStation = new Station(newName);
+
+        network.put(newStation, edges);
+
+        for (Station station : network.keySet()) {
+
+            for (Edge edge : network.get(station)) {
+
+                if (edge.destination.name.equals(oldName)) {
+
+                    edge.destination = newStation;
+                }
+            }
+        }
+        notifyListeners();
+
+        return true;
+    }
+    public Station findStation(String name) {
+
+        for (Station station : network.keySet()) {
+
+            if (station.name.equalsIgnoreCase(name))
+                return station;
+        }
+
+        return null;
+    }
+
+    public boolean stationExists(String name) {
+
+        return findStation(name) != null;
+    }
+
+    public void addListener(NetworkListener listener) {
+
+        if (!listeners.contains(listener)) {
+
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(NetworkListener listener) {
+
+        listeners.remove(listener);
+    }
+
+    private void notifyListeners() {
+
+        for (NetworkListener listener : listeners) {
+
+            listener.onNetworkChanged();
+        }
+    }
+    public int getRoutesCount() {
+
+        int count = 0;
+
+        for (Station station : getStations()) {
+
+            count += getRoutes(station.name).size();
+        }
+
+        return count;
+    }
+    public ArrayList<Edge> getRoutes(String stationName) {
+
+        Station station = findStation(stationName);
+
+        if (station == null)
+            return new ArrayList<>();
+
+        return network.get(station);
     }
 }

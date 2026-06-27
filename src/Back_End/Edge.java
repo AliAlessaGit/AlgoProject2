@@ -1,8 +1,8 @@
 package Back_End;
 
 public class Edge {
-    Station destination;
-    int weight;
+    public Station destination;
+    public int weight;
 
     Edge(Station destination, int weight) {
         this.destination = destination;

@@ -1,105 +1,99 @@
 package Front_End.Pages;
 
+import Back_End.Network;
+import Back_End.NetworkListener;
 import Front_End.Theme;
 import Front_End.Components.*;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class DashboardPanel extends JPanel {
+public class DashboardPanel extends JPanel implements NetworkListener {
 
-    public DashboardPanel() {
+    private final Network network;
 
-        setBackground(
-                Theme.BACKGROUND);
+    private JLabel stationsLabel;
+    private JLabel routesLabel;
+    private JLabel cyclesLabel;
+    private JLabel statusLabel;
 
-        setLayout(
-                new BorderLayout(
-                        20,
-                        20));
+    public DashboardPanel(Network network) {
 
-        setBorder(
-                BorderFactory.createEmptyBorder(
-                        25,
-                        25,
-                        25,
-                        25));
+        this.network = network;
 
-        add(
-                new PageTitle(
-                        "Dashboard"),
-                BorderLayout.NORTH);
+        network.addListener(this);
 
-        JPanel cards =
-                new JPanel(
-                        new GridLayout(
-                                2,
-                                2,
-                                20,
-                                20));
+        setBackground(Theme.BACKGROUND);
+
+        setLayout(new BorderLayout(20,20));
+
+        setBorder(BorderFactory.createEmptyBorder(25,25,25,25));
+
+        add(new PageTitle("Dashboard"), BorderLayout.NORTH);
+
+        JPanel cards = new JPanel(new GridLayout(2,2,20,20));
 
         cards.setOpaque(false);
 
-        cards.add(
-                createInfoCard(
-                        "Stations",
-                        "0"));
+        stationsLabel = new JLabel();
+        routesLabel = new JLabel();
+        cyclesLabel = new JLabel();
+        statusLabel = new JLabel();
 
-        cards.add(
-                createInfoCard(
-                        "Routes",
-                        "0"));
+        cards.add(createInfoCard("Stations", stationsLabel));
+        cards.add(createInfoCard("Routes", routesLabel));
+        cards.add(createInfoCard("Cycles", cyclesLabel));
+        cards.add(createInfoCard("Status", statusLabel));
 
-        cards.add(
-                createInfoCard(
-                        "Cycles",
-                        "Unknown"));
+        add(cards, BorderLayout.CENTER);
 
-        cards.add(
-                createInfoCard(
-                        "Status",
-                        "Ready"));
-
-        add(cards,
-                BorderLayout.CENTER);
+        refreshDashboard();
     }
 
-    private CustomCard createInfoCard(
-            String title,
-            String value) {
+    private CustomCard createInfoCard(String title, JLabel valueLabel){
 
-        CustomCard card =
-                new CustomCard();
+        CustomCard card = new CustomCard();
 
-        JLabel titleLabel =
-                new JLabel(title);
+        JLabel titleLabel = new JLabel(title);
 
-        titleLabel.setForeground(
-                Theme.TEXT_SECONDARY);
+        titleLabel.setForeground(Theme.TEXT_SECONDARY);
 
-        titleLabel.setFont(
-                Theme.SUBTITLE_FONT);
+        titleLabel.setFont(Theme.SUBTITLE_FONT);
 
-        JLabel valueLabel =
-                new JLabel(value);
+        valueLabel.setForeground(Theme.ACCENT);
 
-        valueLabel.setForeground(
-                Theme.ACCENT);
+        valueLabel.setFont(new Font("Segoe UI",Font.BOLD,36));
 
-        valueLabel.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        36));
+        card.add(titleLabel,BorderLayout.NORTH);
 
-        card.add(
-                titleLabel,
-                BorderLayout.NORTH);
-
-        card.add(
-                valueLabel,
-                BorderLayout.CENTER);
+        card.add(valueLabel,BorderLayout.CENTER);
 
         return card;
+    }
+
+    public void refreshDashboard(){
+
+        stationsLabel.setText(String.valueOf(network.getStations().size()));
+
+        routesLabel.setText(String.valueOf(network.getRoutesCount()));
+
+        if (network.getStations().isEmpty()) {
+
+            cyclesLabel.setText("No");
+
+        } else {
+
+            cyclesLabel.setText(network.containsCycle() ? "Yes" : "No");
+
+        }
+        statusLabel.setText("Ready");
+
+        repaint();
+    }
+
+    @Override
+    public void onNetworkChanged() {
+
+        refreshDashboard();
     }
 }

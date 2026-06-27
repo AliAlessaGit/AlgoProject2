@@ -138,30 +138,13 @@ public class NetworkFrame extends JFrame {
 
         contentPanel =
                 new JPanel(cardLayout);
-
-        contentPanel.add(
-                new DashboardPanel(),
-                "dashboard");
-
-        contentPanel.add(
-                new StationsPanel(network),
-                "stations");
-
-        contentPanel.add(
-                new RoutesPanel(),
-                "routes");
-
-        contentPanel.add(
-                new AlgorithmsPanel(),
-                "algorithms");
-
-        contentPanel.add(
-                new FilesPanel(),
-                "files");
-
-        contentPanel.add(
-                new DrawPanel(),
-                "draw");
+        // داخل createContent():
+        contentPanel.add(new DashboardPanel(network), "dashboard");
+        contentPanel.add(new StationsPanel(network), "stations");
+        contentPanel.add(new RoutesPanel(network), "routes");
+        contentPanel.add(new AlgorithmsPanel(network), "algorithms");
+        contentPanel.add(new FilesPanel(network), "files");
+        contentPanel.add(new DrawPanel(network), "draw");
 
         add(contentPanel,
                 BorderLayout.CENTER);
