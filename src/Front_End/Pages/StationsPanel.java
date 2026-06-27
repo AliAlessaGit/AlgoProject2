@@ -3,6 +3,7 @@ package Front_End.Pages;
 import Back_End.Network;
 import Back_End.NetworkListener;
 import Back_End.Station;
+import Front_End.Dialogs.EditStationDialog;
 import Front_End.Theme;
 import Front_End.Components.*;
 import Front_End.Dialogs.AddStationDialog;
@@ -84,28 +85,43 @@ public class StationsPanel extends JPanel implements NetworkListener {
         }
     }
 
-    public void refreshStations(){
-
+    public void refreshStations() {
         cardsPanel.removeAll();
 
-        for(Station station : network.getStations()){
-
+        for (Station station : network.getStations()) {
             StationCard card = new StationCard(station);
 
-            card.getDeleteButton().addActionListener(e->{
-
+            // ---- زر الحذف (موجود) ----
+            card.getDeleteButton().addActionListener(e -> {
                 network.removeStation(station.name);
+            });
 
+            // ---- زر التعديل (جديد) ----
+            card.getEditButton().addActionListener(e -> {
+                JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
+                EditStationDialog dialog = new EditStationDialog(frame, network, station);
+                dialog.setVisible(true);
+                if (dialog.isConfirmed()) {
+                    String newName = dialog.getNewName();
+                    String newSymbol = dialog.getNewSymbol();
+                    // تحقق مما إذا كانت البيانات قد تغيرت فعلاً
+                    if (!newName.equals(station.name) || !newSymbol.equals(station.symbol)) {
+                        boolean success = network.renameStation(station.name, newName, newSymbol);
+                        if (!success) {
+                            JOptionPane.showMessageDialog(this,
+                                    "Failed to rename station. Name or Symbol may be duplicate.",
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
             });
 
             cardsPanel.add(card);
         }
 
         cardsPanel.revalidate();
-
         cardsPanel.repaint();
     }
-
     @Override
     public void onNetworkChanged() {
 

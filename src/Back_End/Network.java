@@ -60,28 +60,29 @@ public class Network {
     }
 
     public String exportNetwork() {
-
         StringBuilder sb = new StringBuilder();
 
         for (Station station : network.keySet()) {
-
             sb.append(station.name).append(" -> ");
-
             ArrayList<Edge> edges = network.get(station);
 
+            if (edges.isEmpty()) {
+                sb.append("\n");
+                continue;
+            }
+
             for (int i = 0; i < edges.size(); i++) {
-
                 Edge edge = edges.get(i);
-
-                sb.append(edge.destination)
+                // ✅ التصحيح: استخدام edge.destination.name بدلاً من edge.destination
+                sb.append(edge.destination.name)
                         .append("(")
                         .append(edge.weight)
                         .append(")");
 
-                if (i < edges.size() - 1)
+                if (i < edges.size() - 1) {
                     sb.append(", ");
+                }
             }
-
             sb.append("\n");
         }
 
@@ -89,47 +90,66 @@ public class Network {
     }
 
     public void importNetwork(String text) {
-
+        // تقسيم النص إلى سطور
         String[] lines = text.split("\n");
 
         for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty()) continue;
 
-            if (line.trim().isEmpty())
-                continue;
-
+            // تقسيم السطر إلى مصدر ووجهات
             String[] parts = line.split("->");
+            if (parts.length < 1) continue;
 
             String source = parts[0].trim();
+            if (source.isEmpty()) continue;
 
-            addStation(new Station(source));
+            // إضافة المحطة المصدر (بدون إشعار)
+            Station srcStation = new Station(source);
+            network.putIfAbsent(srcStation, new ArrayList<>());
 
-            notifyListeners();
+            // إذا لم توجد وجهات، تابع
+            if (parts.length < 2) continue;
 
-            if (parts.length < 2)
-                continue;
+            String destinationsPart = parts[1].trim();
+            if (destinationsPart.isEmpty()) continue;
 
-            String destinations = parts[1].trim();
-
-            if (destinations.isEmpty())
-                continue;
-
-            String[] routes = destinations.split(",");
-
+            // تقسيم الوجهات
+            String[] routes = destinationsPart.split(",");
             for (String route : routes) {
-
                 route = route.trim();
+                if (route.isEmpty()) continue;
 
+                // استخراج الوجهة والوزن
                 int open = route.indexOf('(');
                 int close = route.indexOf(')');
 
+                if (open == -1 || close == -1 || open > close) {
+                    continue; // تنسيق غير صحيح
+                }
+
                 String destination = route.substring(0, open).trim();
+                if (destination.isEmpty()) continue;
 
-                int distance = Integer.parseInt(
-                        route.substring(open + 1, close));
+                try {
+                    int distance = Integer.parseInt(route.substring(open + 1, close));
 
-                addRoute(source, destination, distance);
+                    // إضافة المحطة الوجهة (بدون إشعار)
+                    Station destStation = new Station(destination);
+                    network.putIfAbsent(destStation, new ArrayList<>());
+
+                    // إضافة المسار (بدون إشعار)
+                    Edge edge = new Edge(destination, distance);
+                    network.get(srcStation).add(edge);
+
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid distance in route: " + route);
+                }
             }
         }
+
+        // إشعار واحد فقط في النهاية
+        notifyListeners();
     }
 
     public Station chooseStation(Scanner input) {
@@ -157,13 +177,7 @@ public class Network {
         return station;
     }
 
-    public void loadSampleData() {
 
-        String text = "Damascus -> Homs(120), Daraa(90)\n" +
-                "Homs -> Tartous(95), Aleppo(180)";
-
-        importNetwork(text);
-    }
 
     public void printNetwork() {
 
@@ -194,36 +208,28 @@ public class Network {
         }
     }
 
-    // Third Request (Printing)
-    public void readNetworkFromFile() throws IOException {
-
-        Path path = Paths.get("ReadingFile.txt");
-
+    // قراءة الشبكة من ملف (باستخدام مسار مطلق أو نسبي)
+    public void readNetworkFromFile(String filePath) throws IOException {
+        Path path = Paths.get(filePath);
         String content = Files.readString(path);
         importNetwork(content);
-
     }
 
-    public void writeToFile() throws IOException{
-        String content = asciiPrint("Damascus");
-        Path path = Paths.get("WritingFile.txt");
-        Files.writeString(path, content, StandardOpenOption.CREATE);
+    // كتابة الشبكة إلى ملف (باستخدام مسار محدد)
+    public void writeToFile(String filePath) throws IOException {
+        String content = exportNetwork(); // ✅ استخدام exportNetwork بدلاً من asciiPrint
+        Path path = Paths.get(filePath);
+        Files.writeString(path, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
-    public void readAndPrintInFile() {
-        try {
-            readNetworkFromFile();
+    // تحميل بيانات العينة (مع إصلاح التنسيق)
+    public void loadSampleData() {
+        // ✅ استخدام التنسيق الصحيح الذي تفهمه importNetwork
+        String text = "Damascus -> Homs(120), Daraa(90)\n" +
+                "Homs -> Tartous(95), Aleppo(180)\n" +
+                "Aleppo -> Homs(67)";
 
-        } catch (Exception e) {
-            System.out.println("Exception handled");
-
-        }
-
-        try {
-            writeToFile();
-        } catch (IOException e) {
-            System.out.println("Exception handled");
-        }
+        importNetwork(text);
     }
 
     public String asciiPrint(String start) {
@@ -594,5 +600,67 @@ public class Network {
             return new ArrayList<>();
 
         return network.get(station);
+    }
+    // أضف هذه الدالة للتحقق من فريدة الرمز (مع استثناء محطة معينة)
+    public boolean isSymbolUnique(String symbol, Station excludeStation) {
+        for (Station st : network.keySet()) {
+            if (excludeStation != null && st.equals(excludeStation)) continue;
+            if (st.symbol != null && st.symbol.equalsIgnoreCase(symbol)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // عدّل دالة renameStation لتقبل الرمز الجديد أيضاً
+    public boolean renameStation(String oldName, String newName, String newSymbol) {
+        if (oldName.equals(newName) &&
+                (newSymbol == null || newSymbol.equals(findStation(oldName).symbol))) {
+            return true; // لا تغيير
+        }
+
+        // تأكد من أن الاسم الجديد غير مكرر (باستثناء نفس المحطة)
+        Station oldStation = findStation(oldName);
+        if (oldStation == null) return false;
+
+        // تحقق من أن الاسم الجديد غير مستخدم من قبل محطة أخرى
+        for (Station st : network.keySet()) {
+            if (st.equals(oldStation)) continue;
+            if (st.name.equalsIgnoreCase(newName)) {
+                return false; // اسم مكرر
+            }
+        }
+
+        // تحقق من أن الرمز الجديد غير مكرر
+        if (newSymbol != null && !newSymbol.trim().isEmpty()) {
+            if (!isSymbolUnique(newSymbol, oldStation)) {
+                return false; // رمز مكرر
+            }
+        } else {
+            // إذا كان الرمز فارغاً، يمكنك تعيينه إلى null أو تركه
+            newSymbol = null;
+        }
+
+        // احذف المحطة القديمة من الـ Map
+        ArrayList<Edge> edges = network.remove(oldStation);
+        if (edges == null) return false;
+
+        // أنشئ محطة جديدة بالاسم والرمز الجديدين
+        Station newStation = new Station(newName, newSymbol);
+
+        // أضف المحطة الجديدة مع نفس قائمة الحواف
+        network.put(newStation, edges);
+
+        // حدّث جميع الحواف التي تشير إلى المحطة القديمة
+        for (Station st : network.keySet()) {
+            for (Edge edge : network.get(st)) {
+                if (edge.destination.equals(oldStation)) {
+                    edge.destination = newStation;
+                }
+            }
+        }
+
+        notifyListeners();
+        return true;
     }
 }
