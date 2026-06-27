@@ -2,24 +2,27 @@ package Front_End;
 
 import Back_End.Edge;
 import Back_End.Network;
+import Back_End.NetworkListener;
 import Back_End.Station;
 import Front_End.Components.ModernButton;
 import Front_End.Components.PageTitle;
-import Front_End.Dialogs.AddRouteDialog; // سننشئه لاحقاً
+import Front_End.Dialogs.AddRouteDialog;
 import Front_End.Theme;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.ArrayList;
 
-public class RoutesPanel extends JPanel {
+public class RoutesPanel extends JPanel implements NetworkListener {
+
     private final Network network;
     private JTable routesTable;
     private DefaultTableModel tableModel;
 
     public RoutesPanel(Network network) {
         this.network = network;
+        network.addListener(this); // تسجيل المستمع
+
         setBackground(Theme.BACKGROUND);
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -69,7 +72,7 @@ public class RoutesPanel extends JPanel {
             AddRouteDialog dialog = new AddRouteDialog(frame, network);
             dialog.setVisible(true);
             if (dialog.isConfirmed()) {
-                refreshTable();
+                refreshTable(); // التحديث بعد الإضافة
             }
         });
 
@@ -92,7 +95,7 @@ public class RoutesPanel extends JPanel {
             }
         });
 
-        refreshTable();
+        refreshTable(); // تحميل أولي
     }
 
     private void refreshTable() {
@@ -123,7 +126,13 @@ public class RoutesPanel extends JPanel {
                 "Confirm Delete", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             network.removeRoute(source, dest);
-            refreshTable();
+            // سيتم التحديث تلقائياً عن طريق onNetworkChanged()
         }
+    }
+
+    // تنفيذ واجهة NetworkListener
+    @Override
+    public void onNetworkChanged() {
+        refreshTable(); // تحديث الجدول عند أي تغيير في الشبكة
     }
 }

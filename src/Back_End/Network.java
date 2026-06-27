@@ -152,68 +152,7 @@ public class Network {
         notifyListeners();
     }
 
-    public Station chooseStation(Scanner input) {
 
-        ArrayList<Station> stations = new ArrayList<>(network.keySet());
-
-        if (stations.isEmpty()) {
-            System.out.println("No stations found.");
-            return null;
-        }
-
-        System.out.println("\nStations:");
-
-        for (int i = 0; i < stations.size(); i++) {
-            System.out.println((i + 1) + ". " + stations.get(i).name);
-        }
-
-        System.out.print("Choose station number: ");
-        int choice = input.nextInt();
-
-        Station station = stations.get(choice - 1);
-
-        System.out.println("Selected station: " + station.name);
-
-        return station;
-    }
-
-
-
-    public void printNetwork() {
-
-        for (Station station : network.keySet()) {
-
-            System.out.print(station.name + " -> ");
-
-            ArrayList<Edge> edges = network.get(station);
-
-            if (edges.isEmpty()) {
-                System.out.println("No Connections");
-                continue;
-            }
-
-            for (int i = 0; i < edges.size(); i++) {
-
-                Edge edge = edges.get(i);
-
-                System.out.print(
-                        edge.destination.name +
-                                "(" + edge.weight + ")");
-
-                if (i < edges.size() - 1)
-                    System.out.print(", ");
-            }
-
-            System.out.println();
-        }
-    }
-
-    // قراءة الشبكة من ملف (باستخدام مسار مطلق أو نسبي)
-    public void readNetworkFromFile(String filePath) throws IOException {
-        Path path = Paths.get(filePath);
-        String content = Files.readString(path);
-        importNetwork(content);
-    }
 
     // كتابة الشبكة إلى ملف (باستخدام مسار محدد)
     public void writeToFile(String filePath) throws IOException {
